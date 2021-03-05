@@ -1,6 +1,6 @@
 ##################################################################
-### Ploting some top 3 down-regulated and up-regulated genes ###
-##  Plotsing DE genes per cell types
+### Plotting the top 3 down-regulated and up-regulated genes ###
+##  Plotting DE genes per cell types
 ##################################################################
 
 library(Seurat)
