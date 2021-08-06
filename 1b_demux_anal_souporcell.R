@@ -18,10 +18,7 @@ aa <- demux %>% filter(!is.na(assig2),status=="singlet") %>%
     select(barcode,status,Sample_ID=assig2) %>%
     mutate(EXP=gsub("_.*","",barcode))
 
-
-##SNG.BEST.GUESS
-##
-cc <- read_tsv("/nfs/rprdata/scilab/labor2/Covid19.Samples.txt") %>%
+cc <- read_tsv("../Covid19.Samples.txt") %>%
     mutate(Sample_ID=paste(Pregnancy_ID,Origin,sep="-"))
 head(cc)
 

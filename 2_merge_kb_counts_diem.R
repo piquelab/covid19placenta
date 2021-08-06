@@ -1,3 +1,5 @@
+##module load  R/3.6.2
+
 library(Seurat)
 
 library(Matrix)
@@ -7,7 +9,7 @@ library(tidyverse)
 library(diem)
 
 ## Load the datasets
-basefolder <- "/nfs/rprdata/scilab/labor2/kallisto.covid19/bus/"
+basefolder <- "../kallisto/bus/"
 expNames <- dir(basefolder,"^C19C*")
 
 
@@ -22,25 +24,39 @@ expNames <- expNames[ind]
 names(folders) <- expNames
 folders
 
+
+read_count_output <- function(dir, name) {
+      dir <- normalizePath(dir, mustWork = TRUE)
+        m <- readMM(paste0(dir, "/", name, ".mtx"))
+        m <- Matrix::t(m)
+        m <- as(m, "dgCMatrix")
+        # The matrix read has cells in rows
+        ge <- ".genes.txt"
+        genes <- readLines(file(paste0(dir, "/", name, ge)))
+        barcodes <- readLines(file(paste0(dir, "/", name, ".barcodes.txt")))
+        colnames(m) <- barcodes
+        rownames(m) <- genes
+        return(m)
+      }
+
+
 adata <- map(expNames,function(ii){
     ##
     expPrefix = ii;
-    folders[expNames[1]]
-    fName= paste0(folders[ii],"/counts_unfiltered/adata.h5ad")
-    cat("#Loading ",fName,"... \n")
-    adata = ReadH5AD(file = fName,verbose=TRUE)
-    cat(dim(adata),"\n")
-    sce <- create_SCE(rbind(adata@assays$spliced@data,adata@assays$unspliced@data))
+    dir= paste0(folders[ii],"/counts_unfiltered")
+    cat("#Loading ",dir,"... \n")
+    spliced = read_count_output(dir,"spliced")
+    ## unspliced = read_count_output(dir,"unspliced")
+    sce <- create_SCE(spliced)
     cat(dim(sce),"\n")
-    ## Remove debris...  And this seems to have changed ... or consider switching to SoupX. 
-    sce <- diem(sce)
+    ## Remove debris...  New diem version seems different, we could try new or SoupX.
+    sce <- diem(sce, top_n=16000)
+    dim(sce)
     ##
     sc = convert_to_seurat(sce)
     cat("#Final: ",dim(sc),"\n")
-    adata <- adata[,colnames(sc)]
-    adata
+    sc
 })
-
 
 names(adata) <- expNames
 

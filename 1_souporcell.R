@@ -17,7 +17,7 @@ if (!file.exists(outdir)) dir.create(outdir, showWarnings=F)
 #################################
 ### 1. folders of counts data ###
 #################################
-basefolder <- "/nfs/rprdata/scilab/labor2/counts.covid.2020-08-15/souporcell/"
+basefolder <- "../counts_cellranger/souporcell/"
 demuxfn <- list.files(basefolder,pattern="^C19C*",include.dirs=TRUE)
 
 expNames<-demuxfn
@@ -49,11 +49,11 @@ demux <- do.call(rbind,demux)
 ###
 
 ### output
-opfn <- "./1_souporcell_output/1_souporcell.ALL.rds"
+opfn <- paste0(outdir,"1_souporcell.ALL.rds")
 write_rds(demux, opfn)
 
 
-opfn <- "./1_demux2_output/1_souporcell.SNG.rds" 
+opfn <- paste0(outdir,"1_souporcell.SNG.rds")
 demux %>% filter(status=="singlet") %>%
     write_rds(opfn)
 

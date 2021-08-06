@@ -16,7 +16,7 @@ if (!file.exists(outdir)) dir.create(outdir, showWarnings=F)
 #################################
 ### 1. folders of counts data ###
 #################################
-basefolder <- "/nfs/rprdata/scilab/labor2/counts.covid.2020-08-15/demuxlet/demuxlet/"
+basefolder <- "../counts_cellranger/demuxlet/demuxlet/"
 demuxfn <- list.files(basefolder,pattern="*.out.best")
 
 # all the libraries from the membrane placenta 
@@ -41,12 +41,12 @@ demux <- mclapply(expNames,function(ii){
 demux <- do.call(rbind,demux)
 ###
 
-# saving the final demux file obtained from 12 experiments into "1_demux_New.ALL.rds" file
+## saving the final demux file obtained from all experiments into "1_demux_New.ALL.rds" file
 ### output
-opfn <- "./1_demux2_output/1_demux_New.ALL.rds" ## 8,546,845
+opfn <- "./1_demux2_output/1_demux_New.ALL.rds"
 write_rds(demux, opfn)
 
-# DROPLET.TYPE: "SNG" "AMB"
-opfn <- "./1_demux2_output/1_demux_New.SNG.rds" ## 148,807
+## DROPLET.TYPE: "SNG" 
+opfn <- "./1_demux2_output/1_demux_New.SNG.rds" 
 demux %>% filter(DROPLET.TYPE=="SNG") %>%
     write_rds(opfn)
