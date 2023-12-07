@@ -17,11 +17,13 @@ if (!file.exists(outdir)) dir.create(outdir, showWarnings=F)
 #################################
 ### 1. folders of counts data ###
 #################################
-basefolder <- "/nfs/rprdata/scilab/labor2/counts.covid.2020-08-15/souporcell/"
-demuxfn <- list.files(basefolder,pattern="^C19C*",include.dirs=TRUE)
+basefolder <- "../counts_cellranger-2022-01-23/souporcell/"
+expNames <- scan("../counts_cellranger-2022-01-23/libList.txt",what=character())
+##demuxfn <- list.files(basefolder,pattern="^TIL*\\|^Lab*",include.dirs=TRUE)
+##expNames<-demuxfn
 
-expNames<-demuxfn
- 
+expNames
+
 ############################
 ### 2, read souporcell data ###
 ############################
@@ -34,7 +36,7 @@ demux <- mclapply(expNames,function(ii){
       mutate(assignment=paste0(ii,"_",assignment)) %>%
       select(barcode,status,assignment,log_prob_singleton,log_prob_doublet)             
     ##
-    fn <- paste0("cat ",basefolder, ii,"/plink2.kin0 | grep C19C | grep HPL")
+    fn <- paste0("cat ",basefolder, ii,"/plink2.kin0 | grep 'TIL\\|Labor' | grep HPL")
     cat(fn,"\n")
     kin <- data.frame(fread(cmd=fn,header=F))
     kin <- kin %>% group_by(V2) %>% top_n(wt=V6,n=1)
@@ -49,11 +51,10 @@ demux <- do.call(rbind,demux)
 ###
 
 ### output
-opfn <- "./1_souporcell_output/1_souporcell.ALL.rds"
+opfn <- paste0(outdir,"1_souporcell.ALL.rds")
 write_rds(demux, opfn)
 
-
-opfn <- "./1_demux2_output/1_souporcell.SNG.rds" 
+opfn <- paste0(outdir,"1_souporcell.SNG.rds")
 demux %>% filter(status=="singlet") %>%
     write_rds(opfn)
 

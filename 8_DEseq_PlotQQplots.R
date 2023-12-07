@@ -1,52 +1,108 @@
-###################################################
-### QQ plot                                     ###
-###################################################
-
 library(tidyverse)
-##library(knitr)
 library(DESeq2)
-##library(annotables)
 library(qqman)
+library(org.Hs.eg.db)
+library(clusterProfiler)
 
-filter_sample<-c("HPL20874")
-outFolder <- paste0("./8_outputs_DESeq_Plots_",paste(filter_sample,collapse="_"),"/")
+
+
+#outFolder <- paste0("./8_outputs_DESeq_batch_library_Plots/")
+#outFolder <- paste0("./8_outputs_DESeq_batch_library_with_covidcontrol_Plots/")
+outFolder <- paste0("./8_outputs_DESeq_batch_library_with_covidcontrol_Plots_v2/")
+#outFolder <- paste0("./8_outputs_DESeq_batch_library_delroute_Plots/")
 #outFolder <- paste0("./8_outputs_DESeq_Plots/")
+#outFolder <- paste0("./8_outputs_DESeq_batch_library_delroute_Age_Plots/")
 system(paste0("mkdir -p ",outFolder))
 
 
-res <- read_tsv("./7_outputs_DESeq_ConditionsByCluster_filtered_HPL20874_HPL20875_2020-11-27/ALL.combined.2020-11-28.tsv")
-
-## To do next: Plot top genes or heatmap, sumarize effect sizes w/ forest plot.
-## pathway analysis, enrichment analysis. 
-
-fname=paste0(outFolder,"all.qqplot.png");
-png(fname,width=800,height=800)
-qq(res$pvalue)
-dev.off()
-
-# Adding location, cell type, and origin columns 
-res <- res %>% separate(cname,c("Location","Cell_type","Origin"),sep="_",remove=FALSE)
 
 
-###################################################
-# Grouping pvalues based on the Location,Cell_type,and Origin
-# Adding a column showing the rank of each pvalue devided by the number of pvalues in each group 
-###################################################
+#cell.type.annotation<-read_delim("cell.type.annotation.v2.txt")
+cell.type.annotation<-read_tsv("cell.type.annotation.v2.tsv")
+#rownames(cell.type.annotation)<-NULL
+clust2Names<-cell.type.annotation$Potential.final #c("Stromal-1","Macrophage-2","Macrophage-1","Endothelial-1","Monocyte","CD4_T-cell","Decidual","CD8_T-cell","LED","Stromal-2","ILC","NK-cell","Smooth muscle cells-1","Stromal Fibroblast","Macrophage-3","Endothelial-2","DC","Smooth muscle cells-2","EVT","Plasmablast","Smooth muscle cells","Macrophage-4","B-cell","Unciliated Epithelial")
+clust2Names<-paste0(cell.type.annotation$Cluster,":",clust2Names)
+names(clust2Names)<-as.character(cell.type.annotation$Cluster)
+
+
+
+# cell.type.annotation<-read.delim("cell.type.annotation.txt")
+# clust2Names<-cell.type.annotation$Potential.final #c("Stromal-1","Macrophage-2","Macrophage-1","Endothelial-1","Monocyte","CD4_T-cell","Decidual","CD8_T-cell","LED","Stromal-2","ILC","NK-cell","Smooth muscle cells-1","Stromal Fibroblast","Macrophage-3","Endothelial-2","DC","Smooth muscle cells-2","EVT","Plasmablast","Smooth muscle cells","Macrophage-4","B-cell","Unciliated Epithelial")
+# clust2Names<-paste0(cell.type.annotation$Cluster,":",clust2Names)
+# names(clust2Names)<-as.character(cell.type.annotation$Cluster)
+ 
+
+#write.csv(cell.type.annotation,file="cell.type.annotation.csv")
+
+########################################################
+# load single cell data 
+
+########################################################
+#res <- read_tsv("./7_outputs_DESeq_ConditionsByCluster_library/ALL.combined.2022-03-06.tsv")
+
+#res <- read_tsv("./7_outputs_DESeq_ConditionsByCluster_library_delrouth_Age/ALL.combined.2022-03-07.tsv")
+#res <- read_tsv("./7_outputs_DESeq_ConditionsByCluster_noBatchCorrect/ALL.combined.2022-03-07.tsv")
+#res <- read_tsv("./7_outputs_DESeq_ConditionsByCluster_library_delroute/ALL.combined.2022-03-07.tsv" )
+
+#res <- read_tsv("./7_outputs_DESeq_ConditionsByCluster_library/ALL.combined.2022-03-23.tsv" )
+
+#res <- read_tsv("./7_outputs_DESeq_ConditionsByCluster_with_covidcontrol_res1.0_library/ALL.combined.2022-03-29.tsv" )
+res <- read_tsv("./7_outputs_DESeq_ConditionsByCluster_with_covidcontrol_res1.0_library_v2/ALL.combined.2022-05-04.tsv" )
+
+res <- res %>% separate(cname,c("Location","Cluster","Origin"),sep="_",remove=FALSE)
+res$Cell_type<-clust2Names[res$Cluster]
+res$cname<-paste0(res$Cell_type,"_",res$Location,"_",res$Origin)
+#write_tsv(res, paste0("7_outputs_DESeq_ConditionsByCluster_with_covidcontrol_res1.0_library/ALL.combined.withcelltypes",Sys.Date(),".tsv"))
+
+
+## cluster colors 
+
+# clust2Names<-c("Stromal-1","Macrophage-2","Macrophage-1","Endothelial-1","Monocyte", "CD4_T-cell","Decidual","CD8_T-cell","LED","Stromal-2","ILC","NK-cell","Smooth muscle cells-1","Myofibroblast","Macrophage-3","Endothelial-2","DC","Smooth muscle cells-2","EVT","Plasmablast","Smooth muscle cells-3","Macrophage-4","B-cell","Unciliated Epithelial")
+# 
+# names(clust2Names)<-as.character(c(0:23))
+# cluster.Colors<-c("#DF7D99","#838EDF","#4E65A6","#FFC000","#2BA3D3","#9ABF5C","#D14357","#329B2D",
+#                   "#D5438E","#ED4315","#76956C","#7BC791","#CA8588","#F88091","#72C6C8","#E4652C","#9B91B9","#A37584","#2C3E18","#745B48",
+#                   "#AA5485","#4E747A","#C59A89","#C9C76F","#FAFA33","#FFA6C9","#F4C2C2","#1034A6","#08E8DE","#00BFFF")#,"#6F00FF")
+# names(cluster.Colors)<-clust2Names #as.character(c(0:29))#clust2Names #c("Stromal-1","Macrophage-2","Macrophage-1","Endothelial-1","Monocyte", "CD4_T-cell","Decidual","CD8_T-cell","LED","Stromal-2","ILC","NK-cell","Smooth muscle cells-1","Myofibroblast", "Macrophage-3","Endothelial-2","DC","Smooth muscle cells-2","EVT","Plasmablast","Smooth muscle cells-3","Macrophage-4","B-cell","Unciliated Epithelial")
+
+
+cluster.Colors<-cell.type.annotation$color
+names(cluster.Colors)<-clust2Names
+# 
+# 
+# # cluster labels
+# res$Cell_type<-clust2Names[res$Cell_type]
+
+
+
+#ENTREZID
+eg = bitr(res$gene_name, fromType="SYMBOL", toType="ENTREZID", OrgDb="org.Hs.eg.db")
+names(eg)[1]="gene_name"
+head(eg)
+e2g <- eg$gene_name
+names(e2g) <- eg$ENTREZID
+res <- res %>% left_join(eg) %>% filter(!is.na(ENTREZID))
+
+
 res2 <- res %>% filter(!is.na(pvalue)) %>%
     arrange(pvalue) %>%
     group_by(Location,Cell_type,Origin) %>%
     mutate(r=rank(pvalue, ties.method = "random"),pexp=r/length(pvalue))
 
 
-new_names <- read_tsv("../2020-10-02/5_harmony_cellClass_plots_res0.8/ClusterAssignment.res0.8.tsv")
-clust2Names <- new_names$scLabor_ID
-names(clust2Names) <- new_names$seurat_clusters
-cc <- new_names %>% select(scLabor_ID,color) %>% unique 
-cluster.Colors <- cc$color
-names(cluster.Colors) <- cc$scLabor_ID
-tempcol<-cluster.Colors["B-cell"]
-cluster.Colors["B-cell"]<-cluster.Colors["T-cell"]
-cluster.Colors["T-cell"]<-tempcol
+# new_names <- read_tsv("./ClusterAssignment.tsv")
+# clust2Names <- new_names$scLabor_ID
+# names(clust2Names) <- new_names$seurat_clusters
+# cc <- new_names %>% dplyr::select(scLabor_ID,color) %>% unique 
+# cluster.Colors <- cc$color
+# names(cluster.Colors) <- cc$scLabor_ID
+
+
+fname=paste0(outFolder,"all.qqplot.png");
+png(fname,width=800,height=800)
+qq(res$pvalue)
+dev.off()
+
 
 ###################################################
 # qqplot to show the p-values splited by Origin and Location  
@@ -63,6 +119,11 @@ p1 <- res2 %>%
     ylab(expression(Observed -log[10](p))) + 
     theme_bw()
 
-ggsave(fname,p1,width=6,height=4.5)
+ggsave(fname,p1,width=9,height=6)
 
+
+#############################################
+
+# res <- read_tsv("./7_outputs_DESeq_ConditionsByCluster_bath_library/ALL.combined.2021-08-16.tsv")
+# res %>% filter(padj<=0.05)
 

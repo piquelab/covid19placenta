@@ -26,9 +26,29 @@ options(future.globals.maxSize = 30 * 1024 ^ 3)
 ###########################################
 ## Testing sc transform           
 ## 2and3_Diem_Output
-## adata <- read_rds("./kb_diem_Output/kb_diem_Seurat.list.rds")
 
-load("../2020-10-02/3_MergeDemux_Output/scFilteredSeurat.Rdata")
+# no soupx
+
+#load("3_MergeDemux_Output/scFilteredSeurat.Rdata")
+#sc1 <- sc
+
+
+# with control samples from covid19
+load("/wsu/home/groups/prbgenomics/covid19/covid19analysis_public_repo/3_MergeDemux_Output/scFilteredSeurat.Rdata")
+sc_covid<-sc
+sc_covid <- subset(sc_covid, subset = Condition=="Control")
+sc_covid@meta.data$Location <- "CAM"
+sc_covid@meta.data$Location [grepl("PVBP",sc_covid@meta.data$EXP)] <- "PVBP" 
+load("./3_MergeDemux_Output/scFilteredSeurat.Rdata")
+sc@meta.data$Condition<-sc$Labor
+sc1 <- merge(sc_covid,sc, project="parturition")
+
+
+
+# with soupx
+#sc1<-read_rds("1_soupx/seuratObj-newfilter-merge.2022-03-10.rds")
+
+sc1 <- subset(sc1, subset = nFeature_RNA > 100 & nFeature_RNA < 10000 & DIFF.LLK.BEST.NEXT > 3 & percent.mt < 25)
 
 
 
@@ -37,21 +57,9 @@ sc3 <- read_rds("/nfs/rprdata/scilab/novogene/Analyses/Roger_20200218/3_scTransf
 # Subset a Seurat object
 sc3 <- subset(sc3, subset = nFeature_RNA > 100)
 
-
-
-outFolder="./4_harmony_cellClass/"
-system(paste0("mkdir -p ", outFolder))
-
-### Merge
 # to identify the cell types of sc1, another study with known celltypes will be merged to this study and the cell types will be identified
 
-sc<-read_rds("../2020-10-02/4_harmony/sc.NormByLocationRep.Harmony.rds")
-sc1 <- sc
-
-##sc <- merge(sc1,list(sc2,sc3,sc4))
-
 sc <- merge(sc1,list(sc3))
-
 
 dim(sc)
 
@@ -79,15 +87,32 @@ sc <- RunPCA(sc,pc.genes = sc@var.genes, npcs = 100, verbose = TRUE)
 sc <- RunHarmony(sc,c("Library"),reduction="pca")
 
 sc <- RunUMAP(sc,reduction = "harmony", dims = 1:30)
+sc <- FindNeighbors(sc, reduction = "harmony", dims = 1:30, verbose = TRUE)
+
+
+#sapply(c(0.5,0.8,1.5),function(x)
+#sapply(c(0.6,"1.0"),function(x)
+#sapply(c(0.8,"1.0",1.5),function(x)
+sapply(c( 0.8, "1.0", 1.5,2),function(x)
+{
+
+  #outFolder=paste0("./4_harmony_cellClass_elife",x,"/")
+  
+  #outFolder=paste0("./4_harmony_cellClass_SoupX_elife",x,"/")
+  
+  outFolder=paste0("./4_harmony_cellClass_with_covidcontrol_elife",x,"/")
+  system(paste0("mkdir -p ", outFolder))
 
 
 ###### Cluster
 
-sc <- FindNeighbors(sc, reduction = "harmony", dims = 1:30, verbose = TRUE)
-
-sc <- FindClusters(sc, verbose = TRUE,resolution=0.6)
 
 
+sc <- FindClusters(sc, verbose = TRUE,resolution=as.numeric(x))
+
+
+fname=paste0(outFolder,"sc.NormIntegrated.ref.Harmony.rds")
+write_rds(sc,fname)
 
 ################
 
@@ -114,18 +139,17 @@ fname=paste0(outFolder,"sc.NormByLocation.ref.Harmony.singler.rds")
 write_rds(pred.labels,fname)
 
 md <- pred.labels %>% as.data.frame() %>% 
-    rownames_to_column("BARCODES") %>%
-    left_join(sc@meta.data %>% rownames_to_column("BARCODES"))
+  rownames_to_column("BARCODES") %>%
+  left_join(sc@meta.data %>% rownames_to_column("BARCODES"))
 
 
 fname=paste0(outFolder,"sc.NormByLocation.ref.Harmony.singler.csv")
 write_csv(md,fname)
-
+})
 ## save object.
 
-sc<-read_rds("../2020-10-02/4_harmony_cellClass/sc.NormIntegrated.ref.Harmony.rds")
+#sc<-read_rds("../2020-10-02/4_harmony_cellClass/sc.NormIntegrated.ref.Harmony.rds")
 
-fname=paste0(outFolder,"sc.NormIntegrated.ref.Harmony.rds")
-write_rds(sc,fname)
+
 
 
